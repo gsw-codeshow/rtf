@@ -126,6 +126,6 @@ class RTF():
             return False
 
 def main():
-    RTF("1.rtf").plainText()
+    RTF(".\\sample\\text1.rtf").plainText()
 
 main()

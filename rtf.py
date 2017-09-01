@@ -6,6 +6,7 @@ import os
 import time
 import string
 import codecs
+import re
 
 class RTF():
     codepage = "gbk"
@@ -55,29 +56,7 @@ class RTF():
         return self.text
 
     def isKey(self, item):
-        if 1 == len(item):
-            return False
-        if "\\" != item[0]:
-            return False
-        countStr = 1
-        isStr = True
-        isNum = False
-        for itemData in item[1:]:
-            if isStr:
-                if  itemData.isalpha():
-                    continue
-                elif itemData.isdigit():
-                    isNum = True
-                    isStr = False
-                    continue
-                else:
-                    return False
-            if isNum:
-                if itemData.isspace():
-                    continue
-                if not itemData.isalnum():
-                    return False
-        return True
+        return bool(re.search(r"^\\[a-zA-Z]+\d*\s?$",item))
 
     def parseGroup(self):
         listPos = len(self.rawList) - 1

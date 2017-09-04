@@ -9,15 +9,19 @@ import codecs
 import re
 
 class RTF():
-    codepage = "gbk"
-    text = ""
-    isReadControlWord = True
-    groupId = 0
-    # fileName must refer to an RTF file.
-    # Input is not validated.
-    @staticmethod
-    def toPlainText(self, fileName):
-        file = open(fileName)
+    
+    # we must recieve a file_name as parameter to determine which file will be parsed
+    def __init__(self, file_name):
+        self.rawList = [""]
+        self.file_name = file_name
+        self.codepage = "gbk"
+        self.text = ""
+        # the first char of a rtf file is always '{'
+        self.isReadControlWord = True 
+        self.groupId = 0
+
+    def PlainText(self):
+        file = open(self.file_name)
         readFlag = True
 
         while readFlag:
@@ -51,12 +55,8 @@ class RTF():
                 break
             self.isReadControlWord = True
             self.rawListAppend(otherStr)
-        print (self.text)
         file.close()
         return self.text
-
-    def isKey(self, item):
-        return bool(re.search(r"^\\[a-zA-Z]+\d*\s?$",item))
 
     def parseGroup(self):
         listPos = len(self.rawList) - 1
@@ -68,16 +68,19 @@ class RTF():
         self.rawList = self.rawList[:listPos]
         if 1 == self.groupId:
             for groupItem in groupList:
-                if self.isKey(groupItem):
-                    continue
-                if 2 < len(groupItem) and "\\'" == groupItem[:2]:
+                if bool(re.search(r"^\\[a-zA-Z]+\d*\s?$",groupItem)):
+                    # we will check control words later
+                    # for example: codepage control words can't be ignored
+                    pass
+                elif 2 < len(groupItem) and "\\'" == groupItem[:2]:
+                    # this is a chain of encoded  hex string
+                    # we will convert them to a unicode string according to self.codepage
                     groupItem = groupItem.replace("\\'", "")
                     hexGroupItem = codecs.decode(groupItem, "hex_codec")
-                    groupItemStr = hexGroupItem.decode("gbk")
+                    groupItemStr = hexGroupItem.decode(self.codepage)
                     self.text += groupItemStr
-                    continue
-                self.text += groupItem
-
+                else:
+                    self.text += groupItem
         self.groupId -= 1
         return
 
@@ -88,23 +91,6 @@ class RTF():
         else:
             self.rawList.append(word)
 
-    def __init__(self, fileName):
-        self.rawList = [""]
-        self.fileName = fileName
-
-    def plainText(self):
-        return self.toPlainText(self, self.fileName)
-
-    def toTXT(self, fileName):
-        try:
-            file = open(fileName, "w+")
-            file.write(self.plainText())
-            file.close()
-            return True
-        except:
-            return False
-
-def main():
-    RTF(".\\sample\\text1.rtf").plainText()
-
-main()
+if __name__ == "__main__":
+    rtf_object = RTF(os.path.abspath("sample/text1.rtf"))
+    print(rtf_object.PlainText())
